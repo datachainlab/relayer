@@ -8,8 +8,12 @@ type ProverI interface {
 }
 
 type LightClientI interface {
+	// GetChainID returns the chain ID
+	GetChainID() string
+
 	// QueryLatestHeight queries the chain for the latest height and returns it
 	QueryLatestHeight() (int64, error)
+
 	// QueryLatestHeader returns the latest header from the chain
 	QueryLatestHeader() (out HeaderI, err error)
 
@@ -21,5 +25,7 @@ type LightClientI interface {
 
 	// CreateTrustedHeader creates ...
 	CreateTrustedHeader(dstChain LightClientIBCQueryier, srcHeader HeaderI) (HeaderI, error)
-	UpdateLightWithHeader() (HeaderI, error)
+
+	// UpdateLightWithHeader returns the light header and its height
+	UpdateLightWithHeader() (HeaderI, uint64, error)
 }

@@ -11,45 +11,63 @@ type HeaderI interface {
 }
 
 type SyncHeadersI interface {
-	GetHeight(chainID string) uint64
-	GetHeader(chainID string) HeaderI
-	GetTrustedHeaders(src, dst *Chain) (srcHeader HeaderI, dstHeader HeaderI, err error)
-	Updates(*Chain, *Chain) error
+	// GetChainHeight returns the height of chain
+	GetChainHeight(chainID string) uint64
+	// GetLightHeader returns the latest header of light client
+	GetLightHeader(chainID string) HeaderI
+	GetNextLightHeader(src, dst LightClientIBCQueryier) (HeaderI, error)
+	GetNextLightHeaders(src, dst LightClientIBCQueryier) (srcHeader HeaderI, dstHeader HeaderI, err error)
+	Updates(LightClientI, LightClientI) error
 }
 
 type syncHeaders struct {
-	hds map[string]HeaderI
+	latestLightHeaders map[string]HeaderI // chainID => HeaderI
+	latestChainHeights map[string]uint64  // chainID => height
 }
 
 var _ SyncHeadersI = (*syncHeaders)(nil)
 
 // NewSyncHeaders returns a new instance of SyncHeadersI that can be easily
 // kept "reasonably up to date"
-func NewSyncHeaders(src, dst *Chain) (SyncHeadersI, error) {
-	srch, dsth, err := UpdatesWithHeaders(src, dst)
-	if err != nil {
+func NewSyncHeaders(src, dst LightClientI) (SyncHeadersI, error) {
+	// srch, dsth, err := UpdatesWithHeaders(src, dst)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return &syncHeaders{
+	// 	latestLightHeaders: map[string]HeaderI{src.GetChainID(): srch, dst.GetChainID(): dsth},
+	// 	latestChainHeights: map[string]uint64{src.GetChainID(): 0, dst.GetChainID(): 0},
+	// }, nil
+	sh := &syncHeaders{
+		latestLightHeaders: map[string]HeaderI{src.GetChainID(): nil, dst.GetChainID(): nil},
+		latestChainHeights: map[string]uint64{src.GetChainID(): 0, dst.GetChainID(): 0},
+	}
+	if err := sh.Updates(src, dst); err != nil {
 		return nil, err
 	}
-	return &syncHeaders{
-		hds: map[string]HeaderI{src.ChainID(): srch, dst.ChainID(): dsth},
-	}, nil
+	return sh, nil
 }
 
-func (sh syncHeaders) GetHeight(chainID string) uint64 {
-	return sh.hds[chainID].GetHeight().GetRevisionHeight()
+func (sh syncHeaders) GetChainHeight(chainID string) uint64 {
+	// return sh.latestLightHeaders[chainID].GetHeight().GetRevisionHeight()
+	return sh.latestChainHeights[chainID]
 }
 
-func (sh syncHeaders) GetHeader(chainID string) HeaderI {
-	return sh.hds[chainID]
+func (sh syncHeaders) GetLightHeader(chainID string) HeaderI {
+	return sh.latestLightHeaders[chainID]
 }
 
-func (sh syncHeaders) GetTrustedHeaders(src, dst *Chain) (HeaderI, HeaderI, error) {
-	srcTh, err := src.CreateTrustedHeader(dst, sh.GetHeader(src.ChainID()))
+func (sh syncHeaders) GetNextLightHeader(src, dst LightClientIBCQueryier) (HeaderI, error) {
+	return src.CreateTrustedHeader(dst, sh.GetLightHeader(src.GetChainID()))
+}
+
+func (sh syncHeaders) GetNextLightHeaders(src, dst LightClientIBCQueryier) (HeaderI, HeaderI, error) {
+	srcTh, err := sh.GetNextLightHeader(src, dst)
 	if err != nil {
 		fmt.Println("failed to GetTrustedHeaders(src):", err)
 		return nil, nil, err
 	}
-	dstTh, err := dst.CreateTrustedHeader(src, sh.GetHeader(dst.ChainID()))
+	dstTh, err := sh.GetNextLightHeader(dst, src)
 	if err != nil {
 		fmt.Println("failed to GetTrustedHeaders(dst):", err)
 		return nil, nil, err
@@ -57,15 +75,20 @@ func (sh syncHeaders) GetTrustedHeaders(src, dst *Chain) (HeaderI, HeaderI, erro
 	return srcTh, dstTh, nil
 }
 
-func (sh *syncHeaders) Updates(src, dst *Chain) error {
-	srch, err := src.UpdateLightWithHeader()
+func (sh *syncHeaders) Updates(src, dst LightClientI) error {
+	srcHeader, srcHeight, err := src.UpdateLightWithHeader()
 	if err != nil {
 		return err
 	}
-	dsth, err := dst.UpdateLightWithHeader()
+	dstHeader, dstHeight, err := dst.UpdateLightWithHeader()
 	if err != nil {
 		return err
 	}
-	sh.hds = map[string]HeaderI{src.ChainID(): srch, dst.ChainID(): dsth}
+
+	sh.latestLightHeaders[src.GetChainID()] = srcHeader
+	sh.latestLightHeaders[dst.GetChainID()] = dstHeader
+
+	sh.latestChainHeights[src.GetChainID()] = srcHeight
+	sh.latestChainHeights[dst.GetChainID()] = dstHeight
 	return nil
 }

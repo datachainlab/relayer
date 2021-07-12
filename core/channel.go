@@ -78,7 +78,7 @@ func createChannelStep(src, dst *Chain, ordering chantypes.Order) (*RelayMsgs, e
 	)
 
 	err = retry.Do(func() error {
-		srcUpdateHeader, dstUpdateHeader, err = sh.GetTrustedHeaders(src, dst)
+		srcUpdateHeader, dstUpdateHeader, err = sh.GetNextLightHeaders(src, dst)
 		return err
 	}, rtyAtt, rtyDel, rtyErr, retry.OnRetry(func(n uint, err error) {
 		// logRetryUpdateHeaders(src, dst, n, err)
@@ -90,7 +90,7 @@ func createChannelStep(src, dst *Chain, ordering chantypes.Order) (*RelayMsgs, e
 		return nil, err
 	}
 
-	srcChan, dstChan, err := QueryChannelPair(src, dst, int64(sh.GetHeight(src.ChainID()))-1, int64(sh.GetHeight(dst.ChainID()))-1)
+	srcChan, dstChan, err := QueryChannelPair(src, dst, int64(sh.GetChainHeight(src.ChainID()))-1, int64(sh.GetChainHeight(dst.ChainID()))-1)
 	if err != nil {
 		return nil, err
 	}

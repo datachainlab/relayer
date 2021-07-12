@@ -29,6 +29,10 @@ func NewProver(chain *Chain, config ClientConfig) *Prover {
 	return &Prover{chain: chain, config: config}
 }
 
+func (pr *Prover) GetChainID() string {
+	return pr.chain.ChainID()
+}
+
 func (pr *Prover) QueryClientConsensusStateWithProof(height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
 	return pr.chain.queryClientConsensusState(height, dstClientConsHeight, true)
 }
@@ -141,40 +145,41 @@ func (pr *Prover) CreateTrustedHeader(dstChain core.LightClientIBCQueryier, srcH
 func lightError(err error) error { return fmt.Errorf("light client: %w", err) }
 
 // UpdateLightWithHeader calls client.Update and then .
-func (pr *Prover) UpdateLightWithHeader() (core.HeaderI, error) {
+func (pr *Prover) UpdateLightWithHeader() (core.HeaderI, uint64, error) {
 	// create database connection
 	db, df, err := pr.NewLightDB()
 	if err != nil {
-		return nil, lightError(err)
+		return nil, 0, lightError(err)
 	}
 	defer df()
 
 	client, err := pr.LightClient(db)
 	if err != nil {
-		return nil, lightError(err)
+		return nil, 0, lightError(err)
 	}
 
 	sh, err := client.Update(context.Background(), time.Now())
 	if err != nil {
-		return nil, lightError(err)
+		return nil, 0, lightError(err)
 	}
 
 	if sh == nil {
 		sh, err = client.TrustedLightBlock(0)
 		if err != nil {
-			return nil, lightError(err)
+			return nil, 0, lightError(err)
 		}
 	}
 
 	protoVal, err := tmtypes.NewValidatorSet(sh.ValidatorSet.Validators).ToProto()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return &tmclient.Header{
+	h := &tmclient.Header{
 		SignedHeader: sh.SignedHeader.ToProto(),
 		ValidatorSet: protoVal,
-	}, nil
+	}
+	return h, h.GetHeight().GetRevisionHeight(), nil
 }
 
 /// internal method ///

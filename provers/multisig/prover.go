@@ -22,6 +22,10 @@ func NewLocalMultisigProver(config ClientConfig, chain core.ChainI) *LocalMultis
 	return &LocalMultisigProver{config: config, chain: chain}
 }
 
+func (pv *LocalMultisigProver) GetChainID() string {
+	return pv.chain.ChainID()
+}
+
 func (pv *LocalMultisigProver) QueryClientConsensusStateWithProof(height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
 	res, err := pv.chain.QueryClientConsensusState(height, dstClientConsHeight)
 	if err != nil {
@@ -83,7 +87,7 @@ func (pv *LocalMultisigProver) CreateTrustedHeader(dstChain core.LightClientIBCQ
 	panic("not implemented") // TODO: Implement
 }
 
-func (pv *LocalMultisigProver) UpdateLightWithHeader() (core.HeaderI, error) {
+func (pv *LocalMultisigProver) UpdateLightWithHeader() (core.HeaderI, uint64, error) {
 	panic("not implemented") // TODO: Implement
 }
 

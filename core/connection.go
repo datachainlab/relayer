@@ -84,7 +84,7 @@ func createConnectionStep(src, dst *Chain) (*RelayMsgs, error) {
 		srcConsH, dstConsH               ibcexported.Height
 	)
 	err = retry.Do(func() error {
-		srcUpdateHeader, dstUpdateHeader, err = sh.GetTrustedHeaders(src, dst)
+		srcUpdateHeader, dstUpdateHeader, err = sh.GetNextLightHeaders(src, dst)
 		return err
 	}, rtyAtt, rtyDel, rtyErr, retry.OnRetry(func(n uint, err error) {
 		// logRetryUpdateHeaders(src, dst, n, err)
@@ -96,16 +96,14 @@ func createConnectionStep(src, dst *Chain) (*RelayMsgs, error) {
 		return nil, err
 	}
 
-	fmt.Println("Try to QueryConnectionPair:", src.Path().ConnectionID, dst.Path().ConnectionID)
-	srcConn, dstConn, err := QueryConnectionPair(src, dst, int64(sh.GetHeight(src.ChainID()))-1, int64(sh.GetHeight(dst.ChainID()))-1)
+	srcConn, dstConn, err := QueryConnectionPair(src, dst, int64(sh.GetChainHeight(src.ChainID()))-1, int64(sh.GetChainHeight(dst.ChainID()))-1)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("srcConn:", srcConn.Connection.State.String(), " dstConn:", dstConn.Connection.State.String())
 
 	if !(srcConn.Connection.State == conntypes.UNINITIALIZED && dstConn.Connection.State == conntypes.UNINITIALIZED) {
 		// Query client state from each chain's client
-		srcCsRes, dstCsRes, err = QueryClientStatePair(src, dst, int64(sh.GetHeight(src.ChainID()))-1, int64(sh.GetHeight(dst.ChainID()))-1)
+		srcCsRes, dstCsRes, err = QueryClientStatePair(src, dst, int64(sh.GetChainHeight(src.ChainID()))-1, int64(sh.GetChainHeight(dst.ChainID()))-1)
 		if err != nil && (srcCsRes == nil || dstCsRes == nil) {
 			return nil, err
 		}
@@ -122,7 +120,7 @@ func createConnectionStep(src, dst *Chain) (*RelayMsgs, error) {
 		// NOTE: We query connection at height - 1 because of the way tendermint returns
 		// proofs the commit for height n is contained in the header of height n + 1
 		srcCons, dstCons, err = QueryClientConsensusStatePair(
-			src, dst, int64(sh.GetHeight(src.ChainID()))-1, int64(sh.GetHeight(dst.ChainID()))-1, srcConsH, dstConsH)
+			src, dst, int64(sh.GetChainHeight(src.ChainID()))-1, int64(sh.GetChainHeight(dst.ChainID()))-1, srcConsH, dstConsH)
 		if err != nil {
 			return nil, err
 		}
