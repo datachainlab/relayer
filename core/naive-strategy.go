@@ -28,7 +28,7 @@ func (st NaiveStrategy) GetType() string {
 	return "naive"
 }
 
-func (st NaiveStrategy) UnrelayedSequences(src, dst ChainI, sh SyncHeadersI) (*RelaySequences, error) {
+func (st NaiveStrategy) UnrelayedSequences(src, dst *Chain, sh SyncHeadersI) (*RelaySequences, error) {
 	var (
 		eg           = new(errgroup.Group)
 		srcPacketSeq = []uint64{}
@@ -117,7 +117,7 @@ func (st NaiveStrategy) UnrelayedSequences(src, dst ChainI, sh SyncHeadersI) (*R
 	return rs, nil
 }
 
-func (st NaiveStrategy) RelayPackets(src, dst ChainI, sp *RelaySequences, sh SyncHeadersI) error {
+func (st NaiveStrategy) RelayPackets(src, dst *Chain, sp *RelaySequences, sh SyncHeadersI) error {
 	// set the maximum relay transaction constraints
 	msgs := &RelayMsgs{
 		Src:          []sdk.Msg{},
@@ -190,7 +190,7 @@ func (st NaiveStrategy) RelayPackets(src, dst ChainI, sp *RelaySequences, sh Syn
 	return nil
 }
 
-func (st NaiveStrategy) UnrelayedAcknowledgements(src, dst ChainI, sh SyncHeadersI) (*RelaySequences, error) {
+func (st NaiveStrategy) UnrelayedAcknowledgements(src, dst *Chain, sh SyncHeadersI) (*RelaySequences, error) {
 	var (
 		eg           = new(errgroup.Group)
 		srcPacketSeq = []uint64{}
@@ -309,7 +309,7 @@ func logPacketsRelayed(src, dst ChainI, num int) {
 		num, dst.ChainID(), dst.Path().PortID, src.ChainID(), src.Path().PortID))
 }
 
-func (st NaiveStrategy) RelayAcknowledgements(src, dst ChainI, sp *RelaySequences, sh SyncHeadersI) error {
+func (st NaiveStrategy) RelayAcknowledgements(src, dst *Chain, sp *RelaySequences, sh SyncHeadersI) error {
 	// set the maximum relay transaction constraints
 	msgs := &RelayMsgs{
 		Src:          []sdk.Msg{},

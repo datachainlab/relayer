@@ -1,0 +1,18 @@
+syntax = "proto3";
+package relayer.core;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/hyperledger-labs/yui-relayer/core";
+option (gogoproto.goproto_getters_all) = false;
+
+service Prover {
+  rpc Prove(QueryProveRequest) returns (QueryProveResponse) {}
+}
+
+message QueryProveRequest {}
+
+message QueryProveResponse {
+  bytes proof = 1;
+}

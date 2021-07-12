@@ -13,6 +13,10 @@ func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 		(*core.ChainConfigI)(nil),
 		&ChainConfig{},
 	)
+	registry.RegisterImplementations(
+		(*core.ClientConfigI)(nil),
+		&ClientConfig{},
+	)
 }
 
 func makeEncodingConfig() params.EncodingConfig {

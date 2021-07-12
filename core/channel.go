@@ -11,7 +11,7 @@ import (
 
 // CreateChannel runs the channel creation messages on timeout until they pass
 // TODO: add max retries or something to this function
-func CreateChannel(src, dst ChainI, ordered bool, to time.Duration) error {
+func CreateChannel(src, dst *Chain, ordered bool, to time.Duration) error {
 	var order chantypes.Order
 	if ordered {
 		order = chantypes.ORDERED
@@ -61,7 +61,7 @@ func CreateChannel(src, dst ChainI, ordered bool, to time.Duration) error {
 	return nil
 }
 
-func createChannelStep(src, dst ChainI, ordering chantypes.Order) (*RelayMsgs, error) {
+func createChannelStep(src, dst *Chain, ordering chantypes.Order) (*RelayMsgs, error) {
 	out := NewRelayMsgs()
 	if err := validatePaths(src, dst); err != nil {
 		return nil, err

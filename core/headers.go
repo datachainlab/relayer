@@ -13,8 +13,8 @@ type HeaderI interface {
 type SyncHeadersI interface {
 	GetHeight(chainID string) uint64
 	GetHeader(chainID string) HeaderI
-	GetTrustedHeaders(src, dst ChainI) (srcHeader HeaderI, dstHeader HeaderI, err error)
-	Updates(ChainI, ChainI) error
+	GetTrustedHeaders(src, dst *Chain) (srcHeader HeaderI, dstHeader HeaderI, err error)
+	Updates(*Chain, *Chain) error
 }
 
 type syncHeaders struct {
@@ -25,7 +25,7 @@ var _ SyncHeadersI = (*syncHeaders)(nil)
 
 // NewSyncHeaders returns a new instance of SyncHeadersI that can be easily
 // kept "reasonably up to date"
-func NewSyncHeaders(src, dst ChainI) (SyncHeadersI, error) {
+func NewSyncHeaders(src, dst *Chain) (SyncHeadersI, error) {
 	srch, dsth, err := UpdatesWithHeaders(src, dst)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (sh syncHeaders) GetHeader(chainID string) HeaderI {
 	return sh.hds[chainID]
 }
 
-func (sh syncHeaders) GetTrustedHeaders(src, dst ChainI) (HeaderI, HeaderI, error) {
+func (sh syncHeaders) GetTrustedHeaders(src, dst *Chain) (HeaderI, HeaderI, error) {
 	srcTh, err := src.CreateTrustedHeader(dst, sh.GetHeader(src.ChainID()))
 	if err != nil {
 		fmt.Println("failed to GetTrustedHeaders(src):", err)
@@ -57,7 +57,7 @@ func (sh syncHeaders) GetTrustedHeaders(src, dst ChainI) (HeaderI, HeaderI, erro
 	return srcTh, dstTh, nil
 }
 
-func (sh *syncHeaders) Updates(src, dst ChainI) error {
+func (sh *syncHeaders) Updates(src, dst *Chain) error {
 	srch, err := src.UpdateLightWithHeader()
 	if err != nil {
 		return err

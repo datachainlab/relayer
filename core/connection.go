@@ -19,7 +19,7 @@ var (
 	rtyErr    = retry.LastErrorOnly(true)
 )
 
-func CreateConnection(src, dst ChainI, to time.Duration) error {
+func CreateConnection(src, dst *Chain, to time.Duration) error {
 	ticker := time.NewTicker(to)
 
 	failed := 0
@@ -64,7 +64,7 @@ func CreateConnection(src, dst ChainI, to time.Duration) error {
 	return nil
 }
 
-func createConnectionStep(src, dst ChainI) (*RelayMsgs, error) {
+func createConnectionStep(src, dst *Chain) (*RelayMsgs, error) {
 	out := NewRelayMsgs()
 	if err := validatePaths(src, dst); err != nil {
 		return nil, err

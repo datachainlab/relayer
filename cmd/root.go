@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hyperledger-labs/yui-relayer/chains/corda"
-	"github.com/hyperledger-labs/yui-relayer/chains/fabric"
-	fabriccmd "github.com/hyperledger-labs/yui-relayer/chains/fabric/cmd"
+	// "github.com/hyperledger-labs/yui-relayer/chains/corda"
+	// "github.com/hyperledger-labs/yui-relayer/chains/fabric"
+	// fabriccmd "github.com/hyperledger-labs/yui-relayer/chains/fabric/cmd"
 	"github.com/hyperledger-labs/yui-relayer/chains/tendermint"
 	tendermintcmd "github.com/hyperledger-labs/yui-relayer/chains/tendermint/cmd"
 	"github.com/hyperledger-labs/yui-relayer/config"
@@ -47,8 +47,8 @@ func init() {
 
 	ec := core.MakeEncodingConfig()
 	tendermint.RegisterInterfaces(ec.InterfaceRegistry)
-	fabric.RegisterInterfaces(ec.InterfaceRegistry)
-	corda.RegisterInterfaces(ec.InterfaceRegistry)
+	// fabric.RegisterInterfaces(ec.InterfaceRegistry)
+	// corda.RegisterInterfaces(ec.InterfaceRegistry)
 	ctx := &config.Context{Config: &config.Config{}, Marshaler: ec.Marshaler}
 
 	// Register subcommands
@@ -61,7 +61,7 @@ func init() {
 		serviceCmd(ctx),
 		flags.LineBreak,
 		tendermintcmd.TendermintCmd(ec.Marshaler, ctx),
-		fabriccmd.FabricCmd(ctx),
+		// fabriccmd.FabricCmd(ctx),
 	)
 
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {

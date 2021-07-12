@@ -57,7 +57,7 @@ func queryClientCmd(ctx *config.Context) *cobra.Command {
 					return err
 				}
 			}
-			res, err := c.QueryClientState(height, false)
+			res, err := c.QueryClientState(height)
 			if err != nil {
 				return err
 			}
@@ -90,7 +90,7 @@ func queryConnection(ctx *config.Context) *cobra.Command {
 				return err
 			}
 
-			res, err := c.QueryConnection(height, false)
+			res, err := c.QueryConnection(height)
 			if err != nil {
 				return err
 			}
@@ -119,7 +119,7 @@ func queryChannel(ctx *config.Context) *cobra.Command {
 				return err
 			}
 
-			res, err := c.QueryChannel(height, false)
+			res, err := c.QueryChannel(height)
 			if err != nil {
 				return err
 			}

@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -11,34 +13,53 @@ import (
 	chantypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
 	ibcexported "github.com/cosmos/ibc-go/modules/core/exported"
 	"github.com/gogo/protobuf/proto"
+	"github.com/hyperledger-labs/yui-relayer/utils"
 )
 
+type Chain struct {
+	ChainI
+	ProverI
+}
+
+func NewChain(base ChainI, prover ProverI) *Chain {
+	return &Chain{ChainI: base, ProverI: prover}
+}
+
 type ChainI interface {
-	ClientType() string
+	IBCQuerier
+
 	ChainID() string
 	ClientID() string
 
 	GetAddress() (sdk.AccAddress, error)
-	// TODO consider whether the name is appropriate.
-	// GetLatestLightHeight uses the CLI utilities to pull the latest height from a given chain
-	GetLatestLightHeight() (int64, error)
 	Marshaler() codec.Codec
 
 	SetPath(p *PathEnd) error
 	Path() *PathEnd
 
-	// QueryLatestHeight queries the chain for the latest height and returns it
-	QueryLatestHeight() (int64, error)
-	// QueryLatestHeader returns the latest header from the chain
-	QueryLatestHeader() (out HeaderI, err error)
+	SendMsgs(msgs []sdk.Msg) ([]byte, error)
+	// Send sends msgs to the chain and logging a result of it
+	// It returns a boolean value whether the result is success
+	Send(msgs []sdk.Msg) bool
+
+	StartEventListener(dst ChainI, strategy StrategyI)
+	Init(homePath string, timeout time.Duration, debug bool) error
+}
+
+type IBCQuerier interface {
 	// QueryClientConsensusState retrevies the latest consensus state for a client in state at a given height
-	QueryClientConsensusState(height int64, dstClientConsHeight ibcexported.Height, prove bool) (*clienttypes.QueryConsensusStateResponse, error)
-	// height represents the height of src chain
-	QueryClientState(height int64, prove bool) (*clienttypes.QueryClientStateResponse, error)
+	QueryClientConsensusState(height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error)
+
+	// QueryClientState returns the client state of dst chain
+	// height represents the height of dst chain
+	QueryClientState(height int64) (*clienttypes.QueryClientStateResponse, error)
+
 	// QueryConnection returns the remote end of a given connection
-	QueryConnection(height int64, prove bool) (*conntypes.QueryConnectionResponse, error)
+	QueryConnection(height int64) (*conntypes.QueryConnectionResponse, error)
+
 	// QueryChannel returns the channel associated with a channelID
-	QueryChannel(height int64, prove bool) (chanRes *chantypes.QueryChannelResponse, err error)
+	QueryChannel(height int64) (chanRes *chantypes.QueryChannelResponse, err error)
+
 	// QueryBalance returns the amount of coins in the relayer account
 	QueryBalance(address sdk.AccAddress) (sdk.Coins, error)
 	// QueryDenomTraces returns all the denom traces from a given chain
@@ -59,27 +80,100 @@ type ChainI interface {
 	// QueryPacket returns a packet corresponds to a given sequence
 	QueryPacket(height int64, sequence uint64) (*chantypes.Packet, error)
 	QueryPacketAcknowledgement(height int64, sequence uint64) ([]byte, error)
+}
 
-	SendMsgs(msgs []sdk.Msg) ([]byte, error)
-	// Send sends msgs to the chain and logging a result of it
-	// It returns a boolean value whether the result is success
-	Send(msgs []sdk.Msg) bool
+type IBCProvableQuerier interface {
+	QueryClientConsensusStateWithProof(height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error)
+	QueryClientStateWithProof(height int64) (*clienttypes.QueryClientStateResponse, error)
+	QueryConnectionWithProof(height int64) (*conntypes.QueryConnectionResponse, error)
+	QueryChannelWithProof(height int64) (chanRes *chantypes.QueryChannelResponse, err error)
+}
 
-	Update(key, value string) (ChainConfigI, error)
+type LightClientIBCQueryier interface {
+	LightClientI
+	IBCQuerier
+}
 
-	// MakeMsgCreateClient creates a CreateClientMsg to this chain
-	MakeMsgCreateClient(clientID string, dstHeader HeaderI, signer sdk.AccAddress) (sdk.Msg, error)
+type ChainClientConfig struct {
+	Chain  json.RawMessage `json:"chain" yaml:"chain"` // NOTE: it's any type as json format
+	Client json.RawMessage `json:"client" yaml:"client"`
 
-	// CreateTrustedHeader creates ...
-	CreateTrustedHeader(dstChain ChainI, srcHeader HeaderI) (HeaderI, error)
-	UpdateLightWithHeader() (HeaderI, error)
+	// cache
+	chain  ChainConfigI  `json:"-" yaml:"-"`
+	client ClientConfigI `json:"-" yaml:"-"`
+}
 
-	StartEventListener(dst ChainI, strategy StrategyI)
+func NewChainClientConfig(m codec.JSONCodec, chain ChainConfigI, client ClientConfigI) (*ChainClientConfig, error) {
+	cbz, err := utils.MarshalJSONAny(m, chain)
+	if err != nil {
+		return nil, err
+	}
+	clbz, err := utils.MarshalJSONAny(m, client)
+	if err != nil {
+		return nil, err
+	}
+	return &ChainClientConfig{
+		Chain:  cbz,
+		Client: clbz,
+		chain:  chain,
+		client: client,
+	}, nil
+}
 
-	Init(homePath string, timeout time.Duration, debug bool) error
+func (cc *ChainClientConfig) Init(m codec.Codec) error {
+	var chain ChainConfigI
+	if err := utils.UnmarshalJSONAny(m, &chain, cc.Chain); err != nil {
+		return err
+	}
+	var client ClientConfigI
+	if err := utils.UnmarshalJSONAny(m, &client, cc.Client); err != nil {
+		return err
+	}
+	cc.chain = chain
+	cc.client = client
+	return nil
+}
+
+func (cc ChainClientConfig) GetChainConfig() (ChainConfigI, error) {
+	if cc.chain == nil {
+		return nil, errors.New("chain is nil")
+	}
+	return cc.chain, nil
+}
+
+func (cc ChainClientConfig) GetClientConfig() (ClientConfigI, error) {
+	if cc.client == nil {
+		return nil, errors.New("client is nil")
+	}
+	return cc.client, nil
+}
+
+func (cc ChainClientConfig) BuildChain() (*Chain, error) {
+	chainConfig, err := cc.GetChainConfig()
+	if err != nil {
+		return nil, err
+	}
+	clientConfig, err := cc.GetClientConfig()
+	if err != nil {
+		return nil, err
+	}
+	chain, err := chainConfig.BuildChain()
+	if err != nil {
+		return nil, err
+	}
+	client, err := clientConfig.BuildClient(chain)
+	if err != nil {
+		return nil, err
+	}
+	return &Chain{ChainI: chain, ProverI: client}, nil
 }
 
 type ChainConfigI interface {
 	proto.Message
-	GetChain() ChainI
+	BuildChain() (ChainI, error)
+}
+
+type ClientConfigI interface {
+	proto.Message
+	BuildClient(ChainI) (ProverI, error)
 }

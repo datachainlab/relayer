@@ -30,20 +30,12 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-// QueryLatestHeight queries the chain for the latest height and returns it
-func (c *Chain) QueryLatestHeight() (int64, error) {
-	res, err := c.Client.Status(context.Background())
-	if err != nil {
-		return -1, err
-	} else if res.SyncInfo.CatchingUp {
-		return -1, fmt.Errorf("node at %s running chain %s not caught up", c.config.RpcAddr, c.ChainID())
-	}
-
-	return res.SyncInfo.LatestBlockHeight, nil
+// QueryClientState retrevies the latest consensus state for a client in state at a given height
+func (c *Chain) QueryClientState(height int64) (*clienttypes.QueryClientStateResponse, error) {
+	return c.queryClientState(height, false)
 }
 
-// QueryClientState retrevies the latest consensus state for a client in state at a given height
-func (c *Chain) QueryClientState(height int64, _ bool) (*clienttypes.QueryClientStateResponse, error) {
+func (c *Chain) queryClientState(height int64, _ bool) (*clienttypes.QueryClientStateResponse, error) {
 	return clientutils.QueryClientStateABCI(c.CLIContext(height), c.PathEnd.ClientID)
 }
 
@@ -64,7 +56,11 @@ var emptyConnRes = conntypes.NewQueryConnectionResponse(
 )
 
 // QueryConnection returns the remote end of a given connection
-func (c *Chain) QueryConnection(height int64, prove bool) (*conntypes.QueryConnectionResponse, error) {
+func (c *Chain) QueryConnection(height int64) (*conntypes.QueryConnectionResponse, error) {
+	return c.queryConnection(height, false)
+}
+
+func (c *Chain) queryConnection(height int64, prove bool) (*conntypes.QueryConnectionResponse, error) {
 	res, err := connutils.QueryConnection(c.CLIContext(height), c.PathEnd.ConnectionID, prove)
 	if err != nil && strings.Contains(err.Error(), "not found") {
 		return emptyConnRes, nil
@@ -90,7 +86,11 @@ var emptyChannelRes = chantypes.NewQueryChannelResponse(
 )
 
 // QueryChannel returns the channel associated with a channelID
-func (c *Chain) QueryChannel(height int64, prove bool) (chanRes *chantypes.QueryChannelResponse, err error) {
+func (c *Chain) QueryChannel(height int64) (chanRes *chantypes.QueryChannelResponse, err error) {
+	return c.queryChannel(height, false)
+}
+
+func (c *Chain) queryChannel(height int64, prove bool) (chanRes *chantypes.QueryChannelResponse, err error) {
 	res, err := chanutils.QueryChannel(c.CLIContext(height), c.PathEnd.PortID, c.PathEnd.ChannelID, prove)
 	if err != nil && strings.Contains(err.Error(), "not found") {
 		return emptyChannelRes, nil
@@ -102,6 +102,11 @@ func (c *Chain) QueryChannel(height int64, prove bool) (chanRes *chantypes.Query
 
 // QueryClientConsensusState retrevies the latest consensus state for a client in state at a given height
 func (c *Chain) QueryClientConsensusState(
+	height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
+	return c.queryClientConsensusState(height, dstClientConsHeight, false)
+}
+
+func (c *Chain) queryClientConsensusState(
 	height int64, dstClientConsHeight ibcexported.Height, _ bool) (*clienttypes.QueryConsensusStateResponse, error) {
 	return clientutils.QueryConsensusStateABCI(
 		c.CLIContext(height),

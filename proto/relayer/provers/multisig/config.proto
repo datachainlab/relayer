@@ -1,0 +1,11 @@
+syntax = "proto3";
+package relayer.provers.multisig.config;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/hyperledger-labs/yui-relayer/provers/multisig";
+option (gogoproto.goproto_getters_all) = false;
+
+message ClientConfig {
+  repeated bytes keys = 1;
+}
