@@ -87,6 +87,8 @@ type IBCProvableQuerier interface {
 	QueryClientStateWithProof(height int64) (*clienttypes.QueryClientStateResponse, error)
 	QueryConnectionWithProof(height int64) (*conntypes.QueryConnectionResponse, error)
 	QueryChannelWithProof(height int64) (chanRes *chantypes.QueryChannelResponse, err error)
+	QueryPacketCommitmentWithProof(height int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error)
+	QueryPacketAcknowledgementCommitmentWithProof(height int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error)
 }
 
 type LightClientIBCQueryier interface {

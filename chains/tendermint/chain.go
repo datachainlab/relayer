@@ -57,10 +57,6 @@ type Chain struct {
 
 var _ core.ChainI = (*Chain)(nil)
 
-func (c *Chain) ClientType() string {
-	return "tendermint"
-}
-
 func (c *Chain) ChainID() string {
 	return c.config.ChainId
 }

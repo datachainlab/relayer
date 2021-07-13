@@ -49,6 +49,14 @@ func (pr *Prover) QueryChannelWithProof(height int64) (chanRes *chantypes.QueryC
 	return pr.chain.queryChannel(height, true)
 }
 
+func (pr *Prover) QueryPacketCommitmentWithProof(height int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
+	return pr.chain.queryPacketCommitment(height, seq, true)
+}
+
+func (pr *Prover) QueryPacketAcknowledgementCommitmentWithProof(height int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
+	return pr.chain.queryPacketAcknowledgementCommitment(height, seq, true)
+}
+
 // QueryLatestHeight queries the chain for the latest height and returns it
 func (pr *Prover) QueryLatestHeight() (int64, error) {
 	res, err := pr.chain.Client.Status(context.Background())

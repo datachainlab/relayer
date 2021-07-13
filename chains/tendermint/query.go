@@ -149,12 +149,21 @@ func (c *Chain) QueryDenomTraces(offset, limit uint64, height int64) (*transfert
 // QueryPacketCommitment returns the packet commitment proof at a given height
 func (c *Chain) QueryPacketCommitment(
 	height int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
-	return chanutils.QueryPacketCommitment(c.CLIContext(height), c.PathEnd.PortID, c.PathEnd.ChannelID, seq, true)
+	return c.queryPacketCommitment(height, seq, false)
+}
+
+func (c *Chain) queryPacketCommitment(
+	height int64, seq uint64, prove bool) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
+	return chanutils.QueryPacketCommitment(c.CLIContext(height), c.PathEnd.PortID, c.PathEnd.ChannelID, seq, prove)
 }
 
 // QueryPacketAcknowledgementCommitment returns the packet ack proof at a given height
 func (c *Chain) QueryPacketAcknowledgementCommitment(height int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
-	return chanutils.QueryPacketAcknowledgement(c.CLIContext(height), c.PathEnd.PortID, c.PathEnd.ChannelID, seq, true)
+	return c.queryPacketAcknowledgementCommitment(height, seq, false)
+}
+
+func (c *Chain) queryPacketAcknowledgementCommitment(height int64, seq uint64, prove bool) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
+	return chanutils.QueryPacketAcknowledgement(c.CLIContext(height), c.PathEnd.PortID, c.PathEnd.ChannelID, seq, prove)
 }
 
 func (dst *Chain) QueryPacketAcknowledgement(height int64, sequence uint64) ([]byte, error) {

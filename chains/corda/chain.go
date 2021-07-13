@@ -24,10 +24,6 @@ func NewChain(config ChainConfig) *Chain {
 
 var _ core.ChainI = (*Chain)(nil)
 
-func (*Chain) ClientType() string {
-	return "corda"
-}
-
 func (c *Chain) ChainID() string {
 	return c.config.ChainId
 }
