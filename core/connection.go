@@ -74,7 +74,6 @@ func createConnectionStep(src, dst *Chain) (*RelayMsgs, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Query a number of things all at once
 	var (
 		srcUpdateHeader, dstUpdateHeader HeaderI

@@ -30,14 +30,6 @@ var _ SyncHeadersI = (*syncHeaders)(nil)
 // NewSyncHeaders returns a new instance of SyncHeadersI that can be easily
 // kept "reasonably up to date"
 func NewSyncHeaders(src, dst LightClientI) (SyncHeadersI, error) {
-	// srch, dsth, err := UpdatesWithHeaders(src, dst)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return &syncHeaders{
-	// 	latestLightHeaders: map[string]HeaderI{src.GetChainID(): srch, dst.GetChainID(): dsth},
-	// 	latestChainHeights: map[string]uint64{src.GetChainID(): 0, dst.GetChainID(): 0},
-	// }, nil
 	sh := &syncHeaders{
 		latestLightHeaders: map[string]HeaderI{src.GetChainID(): nil, dst.GetChainID(): nil},
 		latestChainHeights: map[string]uint64{src.GetChainID(): 0, dst.GetChainID(): 0},

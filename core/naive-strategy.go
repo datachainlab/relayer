@@ -283,7 +283,7 @@ func (st NaiveStrategy) UnrelayedAcknowledgements(src, dst *Chain, sh SyncHeader
 }
 
 // TODO add packet-timeout support
-func relayPackets(chain ChainI, seqs []uint64, sh SyncHeadersI, sender sdk.AccAddress) ([]sdk.Msg, error) {
+func relayPackets(chain *Chain, seqs []uint64, sh SyncHeadersI, sender sdk.AccAddress) ([]sdk.Msg, error) {
 	var msgs []sdk.Msg
 	for _, seq := range seqs {
 		p, err := chain.QueryPacket(int64(sh.GetChainHeight(chain.ChainID())), seq)
@@ -293,7 +293,7 @@ func relayPackets(chain ChainI, seqs []uint64, sh SyncHeadersI, sender sdk.AccAd
 		}
 		// TODO must use (latestHeight-1) as height number in tendermint
 		h := sh.GetChainHeight(chain.ChainID()) - 1
-		res, err := chain.QueryPacketCommitment(int64(h), seq)
+		res, err := chain.QueryPacketCommitmentWithProof(int64(h), seq)
 		if err != nil {
 			log.Println("failed to QueryPacketCommitment:", int64(h), seq, err)
 			return nil, err
@@ -382,7 +382,7 @@ func (st NaiveStrategy) RelayAcknowledgements(src, dst *Chain, sp *RelaySequence
 	return nil
 }
 
-func relayAcks(receiverChain, senderChain ChainI, seqs []uint64, sh SyncHeadersI, sender sdk.AccAddress) ([]sdk.Msg, error) {
+func relayAcks(receiverChain, senderChain *Chain, seqs []uint64, sh SyncHeadersI, sender sdk.AccAddress) ([]sdk.Msg, error) {
 	var msgs []sdk.Msg
 
 	for _, seq := range seqs {
@@ -397,7 +397,7 @@ func relayAcks(receiverChain, senderChain ChainI, seqs []uint64, sh SyncHeadersI
 		// TODO must use (latestHeight-1) as height number in tendermint
 		h := sh.GetChainHeight(receiverChain.ChainID()) - 1
 
-		res, err := receiverChain.QueryPacketAcknowledgementCommitment(int64(h), seq)
+		res, err := receiverChain.QueryPacketAcknowledgementCommitmentWithProof(int64(h), seq)
 		if err != nil {
 			return nil, err
 		}
