@@ -29,7 +29,7 @@ func NewProver(chain *Chain, config ClientConfig) *Prover {
 	return &Prover{chain: chain, config: config}
 }
 
-func (pr *Prover) QueryClientStateWithProof(height int64) (*clienttypes.QueryClientStateResponse, error) {
+func (pr *Prover) QueryClientStateWithProof(_ int64) (*clienttypes.QueryClientStateResponse, error) {
 	cs, proof, err := pr.endorseClientState(pr.chain.pathEnd.ClientID)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func (pr *Prover) QueryClientStateWithProof(height int64) (*clienttypes.QueryCli
 	}, nil
 }
 
-func (pr *Prover) QueryClientConsensusStateWithProof(height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
-	css, proof, err := pr.endorseConsensusState(pr.chain.Path().ClientID, uint64(height))
+func (pr *Prover) QueryClientConsensusStateWithProof(_ int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
+	css, proof, err := pr.endorseConsensusState(pr.chain.Path().ClientID, dstClientConsHeight.GetRevisionHeight())
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (pr *Prover) QueryClientConsensusStateWithProof(height int64, dstClientCons
 	}, nil
 }
 
-func (pr *Prover) QueryConnectionWithProof(height int64) (*conntypes.QueryConnectionResponse, error) {
+func (pr *Prover) QueryConnectionWithProof(_ int64) (*conntypes.QueryConnectionResponse, error) {
 	conn, proof, err := pr.endorseConnectionState(pr.chain.pathEnd.ConnectionID)
 	if err != nil {
 		if strings.Contains(err.Error(), conntypes.ErrConnectionNotFound.Error()) {
@@ -104,7 +104,7 @@ var emptyChannelRes = chantypes.NewQueryChannelResponse(
 	clienttypes.NewHeight(0, 0),
 )
 
-func (pr *Prover) QueryChannelWithProof(height int64) (chanRes *chantypes.QueryChannelResponse, err error) {
+func (pr *Prover) QueryChannelWithProof(_ int64) (chanRes *chantypes.QueryChannelResponse, err error) {
 	channel, proof, err := pr.endorseChannelState(pr.chain.pathEnd.PortID, pr.chain.pathEnd.ChannelID)
 	if err != nil {
 		if strings.Contains(err.Error(), chantypes.ErrChannelNotFound.Error()) {
@@ -124,7 +124,7 @@ func (pr *Prover) QueryChannelWithProof(height int64) (chanRes *chantypes.QueryC
 	}, nil
 }
 
-func (pr *Prover) QueryPacketCommitmentWithProof(height int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
+func (pr *Prover) QueryPacketCommitmentWithProof(_ int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
 	cm, proof, err := pr.endorsePacketCommitment(pr.chain.Path().PortID, pr.chain.Path().ChannelID, seq)
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func (pr *Prover) QueryPacketCommitmentWithProof(height int64, seq uint64) (comR
 	}, nil
 }
 
-func (pr *Prover) QueryPacketAcknowledgementCommitmentWithProof(height int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
+func (pr *Prover) QueryPacketAcknowledgementCommitmentWithProof(_ int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
 	cm, proof, err := pr.endorsePacketAcknowledgement(pr.chain.Path().PortID, pr.chain.Path().ChannelID, seq)
 	if err != nil {
 		return nil, err
